@@ -183,7 +183,7 @@ def apply_reverb(data, sr, room_size=0.8, damping=0.5):
                            [0.8, 0.7, 0.6, 0.5, 0.4, 0.3]):
         ds = int(delay * sr * room_size)
         g = gain * (1.0 - damping)
-        if ds < len(output):
+        if ds > 0 and ds < len(output):
             end = min(ds + len(data), len(output))
             output[ds:end] += data[:end - ds] * g
     return output.astype(np.float32)
