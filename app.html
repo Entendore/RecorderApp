@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#0A0A0A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>VoiceCraft — Voice Recorder</title>
+  <link rel="manifest"
+    href="data:application/json;base64,eyJuYW1lIjoiVm9pY2VDcmFmdCIsInNob3J0X25hbWUiOiJWb2ljZUNyYWZ0IiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBBMEEwQSIsInRoZW1lX2NvbG9yIjoiIzBBMEEwQSJ9">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,900&display=swap"
+    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #0A0A0A;
+      --surface: #111;
+      --card: #1A1A1A;
+      --card-hover: #222;
+      --accent: #FF6D00;
+      --accent-light: #FFAB40;
+      --accent-dim: rgba(255, 109, 0, .12);
+      --red: #FF1744;
+      --red-dim: rgba(255, 23, 68, .12);
+      --green: #00E676;
+      --green-dim: rgba(0, 230, 118, .12);
+      --text-1: #F0F0F0;
+      --text-2: #999;
+      --text-3: #555;
+      --border: rgba(255, 255, 255, .06);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-lg: 24px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    html,
+    body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -40%;
+      left: -20%;
+      width: 70vw;
+      height: 70vw;
+      background: radial-gradient(circle, rgba(255, 109, 0, .06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      animation: bgD 20s ease-in-out infinite alternate;
+      will-change: transform
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -30%;
+      right: -20%;
+      width: 60vw;
+      height: 60vw;
+      background: radial-gradient(circle, rgba(255, 23, 68, .04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      animation: bgD 25s ease-in-out infinite alternate-reverse;
+      will-change: transform
+    }
+
+    @keyframes bgD {
+      to {
+        transform: translate(40px, -30px) scale(1.1)
+      }
+    }
+
+    @keyframes recP {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .4;
+        transform: scale(.8)
+      }
+    }
+
+    @keyframes recBP {
+
+      0%,
+      100% {
+        box-shadow: 0 4px 24px rgba(255, 23, 68, .3)
+      }
+
+      50% {
+        box-shadow: 0 4px 40px rgba(255, 23, 68, .6)
+      }
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden
+    }
+
+    .app-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(var(--safe-top) + 14px) 20px 10px;
+      flex-shrink: 0;
+      z-index: 10
+    }
+
+    .app-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -.5px
+    }
+
+    .app-title span {
+      color: var(--accent)
+    }
+
+    .app-bar-right {
+      display: flex;
+      gap: 8px
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      background: var(--card);
+      color: var(--text-2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .2s, color .2s;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .icon-btn:hover {
+      background: var(--card-hover);
+      color: var(--text-1)
+    }
+
+    .icon-btn:active {
+      transform: scale(.92)
+    }
+
+    .main-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: calc(var(--safe-bottom) + 24px);
+      scrollbar-width: thin;
+      scrollbar-color: var(--text-3) transparent;
+      contain: layout style
+    }
+
+    .main-scroll::-webkit-scrollbar {
+      width: 4px
+    }
+
+    .main-scroll::-webkit-scrollbar-thumb {
+      background: var(--text-3);
+      border-radius: 4px
+    }
+
+    .content {
+      padding: 0 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px
+    }
+
+    .content-left {
+      display: flex;
+      flex-direction: column;
+      gap: 20px
+    }
+
+    .content-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px
+    }
+
+    /* Visualizer */
+    .viz-container {
+      position: relative;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      height: 180px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .3);
+      flex-shrink: 0;
+      contain: layout style paint
+    }
+
+    .viz-container canvas {
+      width: 100%;
+      height: 100%;
+      display: block
+    }
+
+    .viz-overlay {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none
+    }
+
+    .rec-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--red);
+      display: none;
+      animation: recP 1s ease-in-out infinite;
+      will-change: opacity, transform
+    }
+
+    .rec-dot.active {
+      display: block
+    }
+
+    .viz-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text-2);
+      opacity: 0;
+      transition: opacity .3s
+    }
+
+    .viz-label.active {
+      opacity: 1
+    }
+
+    .viz-label.rc {
+      color: var(--red)
+    }
+
+    .viz-label.pc {
+      color: var(--accent)
+    }
+
+    .viz-timer {
+      position: absolute;
+      bottom: 32px;
+      right: 16px;
+      font-size: 26px;
+      font-weight: 300;
+      color: var(--text-1);
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+      opacity: 0;
+      transition: opacity .3s
+    }
+
+    .viz-timer.active {
+      opacity: 1
+    }
+
+    /* Seek bar */
+    .seek-bar {
+      position: absolute;
+      bottom: 14px;
+      left: 12px;
+      right: 12px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .3s;
+      z-index: 2;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .seek-bar.active {
+      opacity: 1
+    }
+
+    .seek-track {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, .08);
+      border-radius: 2px;
+      position: relative
+    }
+
+    .seek-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      pointer-events: none
+    }
+
+    .seek-handle {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      box-shadow: 0 0 8px rgba(255, 109, 0, .5);
+      transition: transform .15s
+    }
+
+    .seek-bar:hover .seek-handle {
+      transform: translate(-50%, -50%) scale(1.3)
+    }
+
+    /* Peak meter */
+    .peak-meter {
+      position: absolute;
+      bottom: 4px;
+      left: 12px;
+      right: 12px;
+      height: 4px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 2px;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity .3s;
+      z-index: 2;
+      pointer-events: none
+    }
+
+    .peak-meter.active {
+      opacity: 1
+    }
+
+    .peak-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #00E676 0%, #00E676 40%, #FFEA00 60%, #FF6D00 80%, #FF1744 100%);
+      will-change: width
+    }
+
+    .peak-hold {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background: #fff;
+      border-radius: 1px;
+      left: 0%;
+      transition: left .05s linear
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      flex-shrink: 0;
+      padding: 4px 0
+    }
+
+    .ctrl-btn {
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .25s cubic-bezier(.4, 0, .2, 1), box-shadow .25s, border-radius .25s;
+      position: relative;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .ctrl-btn:active:not(:disabled) {
+      transform: scale(.92) !important
+    }
+
+    .ctrl-btn:disabled {
+      opacity: .3;
+      cursor: not-allowed
+    }
+
+    .record-btn {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: var(--red);
+      color: #fff;
+      font-size: 32px;
+      box-shadow: 0 4px 24px rgba(255, 23, 68, .3)
+    }
+
+    .record-btn:hover:not(:disabled) {
+      box-shadow: 0 6px 32px rgba(255, 23, 68, .5);
+      transform: scale(1.05)
+    }
+
+    .record-btn.recording {
+      border-radius: 22px;
+      animation: recBP 1.5s ease-in-out infinite
+    }
+
+    .play-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 28px;
+      box-shadow: 0 4px 20px rgba(255, 109, 0, .3)
+    }
+
+    .play-btn:hover:not(:disabled) {
+      box-shadow: 0 6px 28px rgba(255, 109, 0, .5);
+      transform: scale(1.05)
+    }
+
+    .play-btn.playing {
+      background: var(--card);
+      color: var(--accent);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
+      border: 2px solid var(--accent)
+    }
+
+    /* Speed */
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center
+    }
+
+    .speed-chip {
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      color: var(--text-2);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      font-family: inherit
+    }
+
+    .speed-chip:hover {
+      border-color: rgba(255, 255, 255, .12);
+      background: var(--card-hover)
+    }
+
+    .speed-chip:active {
+      transform: scale(.95)
+    }
+
+    .speed-chip.sel {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent)
+    }
+
+    /* Sections */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-2);
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .section-badge {
+      font-size: 12px;
+      color: var(--text-3)
+    }
+
+    .sort-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .sort-btn:hover {
+      background: var(--card);
+      color: var(--text-1)
+    }
+
+    .preset-desc {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 500;
+      min-height: 16px;
+      text-align: right;
+      max-width: 200px;
+      line-height: 1.3
+    }
+
+    /* Presets */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px
+    }
+
+    .preset-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 6px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      background: var(--card);
+      cursor: pointer;
+      transition: transform .2s, background .2s, border-color .2s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      contain: layout style
+    }
+
+    .preset-chip:hover {
+      background: var(--card-hover);
+      border-color: rgba(255, 255, 255, .1)
+    }
+
+    .preset-chip:active {
+      transform: scale(.95)
+    }
+
+    .preset-chip.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      box-shadow: 0 0 20px rgba(255, 109, 0, .15)
+    }
+
+    .preset-chip .material-icons-round {
+      font-size: 22px;
+      color: var(--text-3);
+      transition: color .2s
+    }
+
+    .preset-chip.selected .material-icons-round {
+      color: var(--accent)
+    }
+
+    .preset-chip-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-2);
+      text-align: center;
+      line-height: 1.2;
+      transition: color .2s
+    }
+
+    .preset-chip.selected .preset-chip-name {
+      color: var(--text-1)
+    }
+
+    /* Recordings */
+    .recordings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .recording-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 14px 14px 16px;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+      contain: layout style
+    }
+
+    .recording-item:hover {
+      background: var(--card-hover)
+    }
+
+    .recording-item.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim)
+    }
+
+    .rec-item-play {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent-dim);
+      color: var(--accent);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background .2s, color .2s;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .rec-item-play:hover {
+      background: var(--accent);
+      color: #fff
+    }
+
+    .rec-item-play:active {
+      transform: scale(.9)
+    }
+
+    .rec-item-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .rec-item-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: default
+    }
+
+    .rec-item-rename {
+      width: 100%;
+      padding: 2px 4px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text-1);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      outline: none
+    }
+
+    .rec-item-meta {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .rec-item-preset-badge {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 100px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600
+    }
+
+    .rec-item-more {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background .2s, color .2s;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .rec-item-more:hover {
+      background: var(--card-hover);
+      color: var(--text-1)
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--text-3);
+      font-size: 14px;
+      line-height: 1.6
+    }
+
+    .empty-state .material-icons-round {
+      font-size: 40px;
+      display: block;
+      margin-bottom: 8px;
+      opacity: .4
+    }
+
+    /* Context menu */
+    .ctx-menu {
+      position: fixed;
+      z-index: 60;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px;
+      min-width: 180px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+      display: none;
+      overflow: hidden
+    }
+
+    .ctx-menu.active {
+      display: block
+    }
+
+    .ctx-menu button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 11px 14px;
+      border: none;
+      background: transparent;
+      color: var(--text-1);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: background .15s;
+      -webkit-tap-highlight-color: transparent;
+      text-align: left
+    }
+
+    .ctx-menu button:hover {
+      background: var(--card-hover)
+    }
+
+    .ctx-menu button .material-icons-round {
+      font-size: 18px;
+      color: var(--text-3)
+    }
+
+    .ctx-menu button.ctx-del {
+      color: var(--red)
+    }
+
+    .ctx-menu button.ctx-del .material-icons-round {
+      color: var(--red)
+    }
+
+    .ctx-menu .ctx-sep {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 8px
+    }
+
+    /* Help modal */
+    .help-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      background: rgba(0, 0, 0, .85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 32px
+    }
+
+    .help-overlay.active {
+      display: flex
+    }
+
+    .help-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .5);
+      max-height: 80vh;
+      overflow-y: auto
+    }
+
+    .help-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px
+    }
+
+    .help-header h2 {
+      font-size: 18px;
+      font-weight: 700
+    }
+
+    .help-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 13px;
+      color: var(--text-2)
+    }
+
+    .help-row span:first-child {
+      color: var(--text-1);
+      font-weight: 500
+    }
+
+    .help-row kbd {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600
+    }
+
+    .help-sep {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 0
+    }
+
+    /* Permission overlay */
+    .perm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(0, 0, 0, .88);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 32px
+    }
+
+    .perm-overlay.active {
+      display: flex
+    }
+
+    .perm-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      text-align: center;
+      max-width: 380px;
+      width: 100%;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .5)
+    }
+
+    .perm-card .material-icons-round {
+      font-size: 48px;
+      color: var(--red);
+      margin-bottom: 16px
+    }
+
+    .perm-card h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px
+    }
+
+    .perm-card p {
+      font-size: 14px;
+      color: var(--text-2);
+      line-height: 1.6;
+      margin-bottom: 24px
+    }
+
+    .perm-btn {
+      padding: 14px 36px;
+      border-radius: 100px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .perm-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 4px 20px rgba(255, 109, 0, .4)
+    }
+
+    .perm-btn:active {
+      transform: scale(.97)
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 24px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+      align-items: center;
+      pointer-events: none;
+      max-width: 92vw
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-1);
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .5);
+      opacity: 0;
+      transform: translateY(12px) scale(.95);
+      transition: opacity .3s, transform .3s cubic-bezier(.4, 0, .2, 1);
+      white-space: nowrap
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0) scale(1)
+    }
+
+    .toast.toast-recording {
+      border-color: rgba(255, 23, 68, .3);
+      color: var(--red)
+    }
+
+    .toast.toast-error {
+      border-color: rgba(255, 23, 68, .3);
+      color: var(--red)
+    }
+
+    .toast.toast-success {
+      border-color: rgba(0, 230, 118, .3);
+      color: var(--green)
+    }
+
+    .toast-undo {
+      padding: 3px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      pointer-events: auto;
+      transition: background .15s
+    }
+
+    .toast-undo:hover {
+      background: var(--accent-dim)
+    }
+
+    .kbd-hint {
+      display: none;
+      font-size: 11px;
+      color: var(--text-3);
+      text-align: center;
+      padding: 4px 0 0;
+      letter-spacing: .3px
+    }
+
+    .kbd-hint kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 10px;
+      color: var(--text-2);
+      margin: 0 2px
+    }
+
+    /* Responsive: Tablet */
+    @media(min-width:768px) {
+      .content {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: flex-start
+      }
+
+      .content-left {
+        flex: 1 1 340px;
+        min-width: 0
+      }
+
+      .content-right {
+        flex: 1 1 300px;
+        min-width: 0
+      }
+
+      .viz-container {
+        height: 200px
+      }
+
+      .preset-chip {
+        padding: 16px 8px
+      }
+
+      .preset-chip .material-icons-round {
+        font-size: 24px
+      }
+
+      .preset-chip-name {
+        font-size: 12px
+      }
+
+      .record-btn {
+        width: 80px;
+        height: 80px;
+        font-size: 34px
+      }
+
+      .play-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 30px
+      }
+
+      .controls {
+        gap: 32px
+      }
+
+      .recording-item {
+        padding: 16px 14px 16px 18px
+      }
+    }
+
+    /* Desktop */
+    @media(min-width:1024px) {
+      .app {
+        max-width: 1100px;
+        margin: 0 auto
+      }
+
+      .app-bar {
+        padding: calc(var(--safe-top) + 18px) 32px 12px
+      }
+
+      .app-title {
+        font-size: 24px
+      }
+
+      .content {
+        padding: 0 32px 28px;
+        gap: 24px
+      }
+
+      .content-left {
+        flex: 1.2 1 400px
+      }
+
+      .content-right {
+        flex: 1 1 340px
+      }
+
+      .viz-container {
+        height: 240px;
+        border-radius: 28px
+      }
+
+      .viz-timer {
+        font-size: 30px;
+        bottom: 36px;
+        right: 20px
+      }
+
+      .preset-chip {
+        padding: 18px 10px;
+        border-radius: 18px
+      }
+
+      .preset-chip .material-icons-round {
+        font-size: 26px
+      }
+
+      .preset-chip-name {
+        font-size: 13px
+      }
+
+      .record-btn {
+        width: 88px;
+        height: 88px;
+        font-size: 36px
+      }
+
+      .play-btn {
+        width: 64px;
+        height: 64px;
+        font-size: 32px
+      }
+
+      .controls {
+        gap: 36px;
+        padding: 8px 0
+      }
+
+      .section-title {
+        font-size: 14px
+      }
+
+      .preset-desc {
+        font-size: 13px;
+        max-width: 260px
+      }
+
+      .recording-item {
+        padding: 18px 14px 18px 20px;
+        border-radius: 18px
+      }
+
+      .rec-item-name {
+        font-size: 15px
+      }
+
+      .rec-item-meta {
+        font-size: 13px
+      }
+
+      .kbd-hint {
+        display: block
+      }
+    }
+
+    /* Large desktop */
+    @media(min-width:1440px) {
+      .app {
+        max-width: 1200px
+      }
+
+      .viz-container {
+        height: 280px
+      }
+
+      .preset-chip {
+        padding: 22px 12px
+      }
+
+      .record-btn {
+        width: 96px;
+        height: 96px;
+        font-size: 40px
+      }
+
+      .play-btn {
+        width: 68px;
+        height: 68px;
+        font-size: 34px
+      }
+    }
+
+    /* Small phone */
+    @media(max-width:379px) {
+      .app-bar {
+        padding: calc(var(--safe-top) + 10px) 14px 8px
+      }
+
+      .app-title {
+        font-size: 19px
+      }
+
+      .content {
+        padding: 0 14px 16px;
+        gap: 18px
+      }
+
+      .viz-container {
+        height: 140px;
+        border-radius: 18px
+      }
+
+      .viz-timer {
+        font-size: 20px;
+        bottom: 28px
+      }
+
+      .presets-grid {
+        gap: 7px
+      }
+
+      .preset-chip {
+        padding: 10px 4px;
+        border-radius: 12px
+      }
+
+      .preset-chip .material-icons-round {
+        font-size: 20px
+      }
+
+      .preset-chip-name {
+        font-size: 9px
+      }
+
+      .record-btn {
+        width: 68px;
+        height: 68px;
+        font-size: 28px
+      }
+
+      .play-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 24px
+      }
+
+      .controls {
+        gap: 22px
+      }
+
+      .recording-item {
+        padding: 12px;
+        gap: 10px
+      }
+
+      .rec-item-play {
+        width: 36px;
+        height: 36px
+      }
+
+      .rec-item-more {
+        width: 32px;
+        height: 32px
+      }
+
+      .rec-item-name {
+        font-size: 13px
+      }
+
+      .rec-item-meta {
+        font-size: 11px
+      }
+
+      .section-title {
+        font-size: 11px
+      }
+
+      .preset-desc {
+        font-size: 10px;
+        max-width: 120px
+      }
+
+      .speed-chip {
+        padding: 5px 10px;
+        font-size: 11px
+      }
+
+      .ctx-menu {
+        min-width: 160px
+      }
+
+      .ctx-menu button {
+        padding: 9px 12px;
+        font-size: 12px
+      }
+    }
+
+    /* Landscape phone */
+    @media(max-height:500px) and (orientation:landscape) {
+      .viz-container {
+        height: 120px
+      }
+
+      .controls {
+        gap: 20px;
+        padding: 0
+      }
+
+      .record-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 26px
+      }
+
+      .play-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 22px
+      }
+
+      .content {
+        gap: 12px
+      }
+
+      .section-header {
+        margin-bottom: 6px
+      }
+
+      .presets-grid {
+        gap: 6px
+      }
+
+      .preset-chip {
+        padding: 8px 4px
+      }
+
+      .preset-chip .material-icons-round {
+        font-size: 18px
+      }
+
+      .preset-chip-name {
+        font-size: 9px
+      }
+
+      .recording-item {
+        padding: 10px 10px 10px 12px;
+        gap: 8px
+      }
+
+      .rec-item-play {
+        width: 34px;
+        height: 34px
+      }
+
+      .rec-item-more {
+        width: 30px;
+        height: 30px
+      }
+
+      .speed-chip {
+        padding: 4px 8px;
+        font-size: 10px
+      }
+    }
+
+    @media(hover:hover) and (pointer:fine) {
+      .preset-chip:hover {
+        transform: translateY(-2px)
+      }
+    }
+
+    @media(hover:none) {
+      .preset-chip:hover {
+        transform: none
+      }
+
+      .recording-item:hover {
+        background: var(--card)
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app">
+    <header class="app-bar">
+      <div class="app-title">Voice<span>Craft</span></div>
+      <div class="app-bar-right">
+        <button class="icon-btn" id="installBtn" style="display:none" aria-label="Install app"><span
+            class="material-icons-round" style="font-size:20px">download</span></button>
+        <button class="icon-btn" id="helpBtn" aria-label="Help"><span class="material-icons-round"
+            style="font-size:20px">help_outline</span></button>
+      </div>
+    </header>
+
+    <div class="main-scroll">
+      <div class="content">
+        <div class="content-left">
+          <div class="viz-container">
+            <canvas id="viz"></canvas>
+            <div class="viz-overlay">
+              <div class="rec-dot" id="recDot"></div>
+              <div class="viz-label" id="vizLabel">REC</div>
+            </div>
+            <div class="viz-timer" id="vizTimer">00:00</div>
+            <div class="seek-bar" id="seekBar">
+              <div class="seek-track">
+                <div class="seek-fill" id="seekFill"></div>
+                <div class="seek-handle" id="seekHandle"></div>
+              </div>
+            </div>
+            <div class="peak-meter" id="peakMeter">
+              <div class="peak-fill" id="peakFill"></div>
+              <div class="peak-hold" id="peakHold"></div>
+            </div>
+          </div>
+          <div class="controls">
+            <button class="ctrl-btn play-btn" id="playBtn" disabled aria-label="Play"><span
+                class="material-icons-round">play_arrow</span></button>
+            <button class="ctrl-btn record-btn" id="recBtn" aria-label="Record"><span
+                class="material-icons-round">mic</span></button>
+          </div>
+          <div class="speed-row" id="speedRow"></div>
+          <div class="kbd-hint"><kbd>Space</kbd> record/play &nbsp; <kbd>1</kbd>–<kbd>8</kbd> presets &nbsp;
+            <kbd>R</kbd> rec &nbsp; <kbd>P</kbd> play &nbsp; <kbd>Del</kbd> delete</div>
+        </div>
+        <div class="content-right">
+          <section>
+            <div class="section-header"><span class="section-title">Voice Presets</span><span class="preset-desc"
+                id="pDesc"></span></div>
+            <div class="presets-grid" id="pGrid"></div>
+          </section>
+          <section>
+            <div class="section-header">
+              <span class="section-title">Recordings <span class="section-badge" id="rCount"></span></span>
+              <button class="sort-btn" id="sortBtn" style="display:none" aria-label="Sort"><span
+                  class="material-icons-round" style="font-size:18px">swap_vert</span></button>
+            </div>
+            <div class="recordings-list" id="rList"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context menu -->
+  <div class="ctx-menu" id="ctxMenu">
+    <button data-ca="download"><span class="material-icons-round">download</span>Download WAV</button>
+    <button data-ca="share"><span class="material-icons-round">share</span>Share</button>
+    <button data-ca="bake"><span class="material-icons-round">auto_fix_high</span>Bake Effect</button>
+    <div class="ctx-sep"></div>
+    <button data-ca="rename"><span class="material-icons-round">edit</span>Rename</button>
+    <button data-ca="delete" class="ctx-del"><span class="material-icons-round">delete_outline</span>Delete</button>
+  </div>
+
+  <!-- Help modal -->
+  <div class="help-overlay" id="helpOvl">
+    <div class="help-card">
+      <div class="help-header">
+        <h2>Controls & Shortcuts</h2><button class="icon-btn" id="helpClose" aria-label="Close"><span
+            class="material-icons-round" style="font-size:18px">close</span></button>
+      </div>
+      <div class="help-row"><span><kbd>Space</kbd></span><span>Record / Play / Stop</span></div>
+      <div class="help-row"><span><kbd>R</kbd></span><span>Toggle recording</span></div>
+      <div class="help-row"><span><kbd>P</kbd></span><span>Toggle playback</span></div>
+      <div class="help-row"><span><kbd>1</kbd> – <kbd>8</kbd></span><span>Select voice preset</span></div>
+      <div class="help-row"><span><kbd>Delete</kbd></span><span>Delete selected recording</span></div>
+      <div class="help-sep"></div>
+      <div class="help-row"><span>Double-click name</span><span>Rename recording</span></div>
+      <div class="help-row"><span>Click seek bar</span><span>Jump to position</span></div>
+      <div class="help-row"><span>Drag seek handle</span><span>Scrub through audio</span></div>
+      <div class="help-sep"></div>
+      <div class="help-row"><span>Download WAV</span><span>Save as 16-bit PCM WAV</span></div>
+      <div class="help-row"><span>Share</span><span>Native share sheet (mobile)</span></div>
+      <div class="help-row"><span>Bake Effect</span><span>Render effect into new recording</span></div>
+    </div>
+  </div>
+
+  <!-- Permission overlay -->
+  <div class="perm-overlay" id="permOvl">
+    <div class="perm-card">
+      <span class="material-icons-round">mic_off</span>
+      <h2>Microphone Access Required</h2>
+      <p>This app needs microphone permission to record audio. Please allow it in your browser or device settings.</p>
+      <button class="perm-btn" id="permRetry">Allow Microphone</button>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastBox"></div>
+
+  <script>
+    /* ============================================================
+       VoiceCraft — Full-featured voice recorder with presets
+       Performance: v3 optimizations preserved + all new features
+       ============================================================ */
+
+    // ── Constants ──
+    var PRESETS = [
+      { id: 'original', name: 'Original', icon: 'graphic_eq', desc: 'Clean, unmodified audio' },
+      { id: 'deep', name: 'Deep', icon: 'arrow_downward', desc: 'Lower pitch with bass boost' },
+      { id: 'chipmunk', name: 'Chipmunk', icon: 'arrow_upward', desc: 'High pitch, sped up' },
+      { id: 'robot', name: 'Robot', icon: 'smart_toy', desc: 'Metallic ring modulation' },
+      { id: 'echo', name: 'Echo', icon: 'surround_sound', desc: 'Repeating delay effect' },
+      { id: 'radio', name: 'Radio', icon: 'radio', desc: 'Narrow band, vintage crackle' },
+      { id: 'underwater', name: 'Underwater', icon: 'water_drop', desc: 'Muffled, low-pass filter' },
+      { id: 'cave', name: 'Cave', icon: 'terrain', desc: 'Spacious reverb tail' }
+    ];
+    var SPEEDS = [ 0.5, 0.75, 1, 1.25, 1.5, 2 ];
+    var SORTS = [
+      { id: 'newest', label: 'Newest first', fn: function (a, b) { return b.ts - a.ts } },
+      { id: 'oldest', label: 'Oldest first', fn: function (a, b) { return a.ts - b.ts } },
+      { id: 'name-asc', label: 'Name A–Z', fn: function (a, b) { return a.name.localeCompare(b.name) } },
+      { id: 'name-desc', label: 'Name Z–A', fn: function (a, b) { return b.name.localeCompare(a.name) } },
+      { id: 'longest', label: 'Longest first', fn: function (a, b) { return b.dur - a.dur } },
+      { id: 'shortest', label: 'Shortest first', fn: function (a, b) { return a.dur - b.dur } }
+    ];
+    var PRESET_RATE = { deep: 0.7, chipmunk: 1.5 };
+
+    // ── State ──
+    var S = {
+      rec: false, play: false, baking: false,
+      list: [], selId: null, preset: 'original', speed: 1,
+      recStart: 0, recRAF: 0, recDur: 0,
+      mr: null, mic: null, micSrc: null, micAn: null,
+      pSrc: null, pAn: null, pOsc: null,
+      playCtxTime: 0, playOffset: 0,
+      sortIdx: 0, ctxId: null, hidden: false,
+      peakHold: 0
+    };
+    var audioCtx = null, deferredPrompt = null;
+
+    // ── DOM ──
+    var $ = function (id) { return document.getElementById(id) };
+    var $recBtn = $('recBtn'), $playBtn = $('playBtn'), $recI = $recBtn.firstElementChild, $playI = $playBtn.firstElementChild;
+    var $dot = $('recDot'), $vLabel = $('vizLabel'), $vTimer = $('vizTimer');
+    var $seekBar = $('seekBar'), $seekFill = $('seekFill'), $seekHandle = $('seekHandle');
+    var $peakM = $('peakMeter'), $peakF = $('peakFill'), $peakH = $('peakHold');
+    var $pGrid = $('pGrid'), $pDesc = $('pDesc'), $speedRow = $('speedRow');
+    var $rList = $('rList'), $rCount = $('rCount'), $sortBtn = $('sortBtn');
+    var $ctxMenu = $('ctxMenu'), $helpOvl = $('helpOvl'), $permOvl = $('permOvl');
+    var canvas = $('viz'), ctx2d = canvas.getContext('2d', { alpha: false });
+    var cW = 0, cH = 0, cDpr = 1;
+    var gradRec = null, gradPlay = null, fillRec = null, fillPlay = null;
+    var centerLineOff = null, centerDirty = true;
+    var _waveBuf = null, _pts = [], _ptsCap = 0;
+    var _toastPool = [], _undoStack = [];
+
+    // ── Cached Audio (per-context via WeakMap) ──
+    var _distCurve = null;
+    function distCurve() { if (_distCurve) return _distCurve; var n = 44100, c = new Float32Array(n); for (var i = 0; i < n; i++) { var x = (i * 2) / n - 1; c[ i ] = ((103) * x * 0.349) / (3.14159 + 100 * Math.abs(x)) } _distCurve = c; return c }
+    var _revCache = new WeakMap();
+    function reverbImp(ctx) { if (_revCache.has(ctx)) return _revCache.get(ctx); var len = Math.max(1, (ctx.sampleRate * 3.5) | 0), b = ctx.createBuffer(2, len, ctx.sampleRate); for (var ch = 0; ch < 2; ch++) { var d = b.getChannelData(ch); for (var i = 0; i < len; i++)d[ i ] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2) } _revCache.set(ctx, b); return b }
+
+    // ── Utility ──
+    function fmt(s) { var m = (s / 60 | 0), sec = (s % 60 | 0); return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec }
+    function aCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); return audioCtx }
+    function findR(id) { for (var i = 0; i < S.list.length; i++)if (S.list[ i ].id === id) return S.list[ i ]; return null }
+    function selR() { return findR(S.selId) }
+    function combRate(pid, spd) { return (PRESET_RATE[ pid ] || 1) * spd }
+    function wStr(v, o, s) { for (var i = 0; i < s.length; i++)v.setUint8(o + i, s.charCodeAt(i)) }
+
+    // ── Canvas Cache ──
+    var ro = new ResizeObserver(function (e) {
+      var r = e[ 0 ].contentRect, d = window.devicePixelRatio || 1, pw = (r.width * d) | 0, ph = (r.height * d) | 0;
+      if (pw === canvas.width && ph === canvas.height) return;
+      canvas.width = pw; canvas.height = ph; ctx2d.setTransform(d, 0, 0, d, 0, 0);
+      cW = r.width; cH = r.height; cDpr = d;
+      gradRec = ctx2d.createLinearGradient(0, 0, cW, 0); gradRec.addColorStop(0, '#FF1744'); gradRec.addColorStop(1, '#FF6D00');
+      gradPlay = ctx2d.createLinearGradient(0, 0, cW, 0); gradPlay.addColorStop(0, '#FF6D00'); gradPlay.addColorStop(1, '#FFAB40');
+      fillRec = ctx2d.createLinearGradient(0, 0, 0, cH); fillRec.addColorStop(0, 'rgba(255,23,68,0.07)'); fillRec.addColorStop(1, 'rgba(0,0,0,0)');
+      fillPlay = ctx2d.createLinearGradient(0, 0, 0, cH); fillPlay.addColorStop(0, 'rgba(255,109,0,0.07)'); fillPlay.addColorStop(1, 'rgba(0,0,0,0)');
+      centerDirty = true;
+    });
+    ro.observe(canvas.parentElement);
+    function rebuildCL() { centerLineOff = document.createElement('canvas'); centerLineOff.width = canvas.width; centerLineOff.height = canvas.height; var c = centerLineOff.getContext('2d'); c.setTransform(cDpr, 0, 0, cDpr, 0, 0); c.strokeStyle = 'rgba(255,255,255,0.03)'; c.lineWidth = 1; c.setLineDash([ 4, 8 ]); c.beginPath(); c.moveTo(0, cH * .5); c.lineTo(cW, cH * .5); c.stroke(); centerDirty = false }
+    function getWB(len) { if (!_waveBuf || _waveBuf.length !== len) _waveBuf = new Uint8Array(len); return _waveBuf }
+    function ensurePts(n) { if (_ptsCap >= n) return; for (var i = _ptsCap; i < n; i++)_pts[ i ] = { x: 0, y: 0 }; _ptsCap = n }
+
+    // ── WAV Encoder ──
+    function encodeWAV(buf) {
+      var nc = buf.numberOfChannels, sr = buf.sampleRate, len = buf.length, total = len * nc;
+      var data = new Float32Array(total);
+      for (var ch = 0; ch < nc; ch++) { var cd = buf.getChannelData(ch); for (var i = 0; i < len; i++)data[ i * nc + ch ] = cd[ i ] }
+      var pcm = new Int16Array(total);
+      for (var j = 0; j < total; j++) { var v = Math.max(-1, Math.min(1, data[ j ])); pcm[ j ] = v < 0 ? v * 0x8000 : v * 0x7FFF }
+      var ab = new ArrayBuffer(44 + pcm.length * 2), dv = new DataView(ab);
+      wStr(dv, 0, 'RIFF'); dv.setUint32(4, ab.length - 8, true); wStr(dv, 8, 'WAVE');
+      wStr(dv, 12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, nc, true);
+      dv.setUint32(24, sr, true); dv.setUint32(28, sr * nc * 2, true); dv.setUint16(32, nc * 2, true); dv.setUint16(34, 16, true);
+      wStr(dv, 36, 'data'); dv.setUint32(40, pcm.length * 2, true);
+      var off = 44; for (var k = 0; k < pcm.length; k++) { dv.setInt16(off, pcm[ k ], true); off += 2 }
+      return new Blob([ ab ], { type: 'audio/wav' });
+    }
+
+    // ── Shared Effect Chain Builder ──
+    function buildChain(ctx, src, pid, spd) {
+      var last = src, osc = null;
+      src.playbackRate.value = combRate(pid, spd);
+      switch (pid)
+      {
+        case 'deep': { var f = ctx.createBiquadFilter(); f.type = 'lowshelf'; f.frequency.value = 250; f.gain.value = 12; src.connect(f); last = f; break }
+        case 'chipmunk': { var f = ctx.createBiquadFilter(); f.type = 'highshelf'; f.frequency.value = 2500; f.gain.value = 8; src.connect(f); last = f; break }
+        case 'robot': { var mg = ctx.createGain(); mg.gain.value = 1; var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 120; var og = ctx.createGain(); og.gain.value = 0.8; o.connect(og); og.connect(mg.gain); o.start(); osc = o; src.connect(mg); last = mg; break }
+        case 'echo': { var dl = ctx.createDelay(1); dl.delayTime.value = 0.22; var fb = ctx.createGain(); fb.gain.value = 0.38; var dr = ctx.createGain(); dr.gain.value = 1; var wt = ctx.createGain(); wt.gain.value = 0.65; var mx = ctx.createGain(); mx.gain.value = 1; src.connect(dr); src.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wt); dr.connect(mx); wt.connect(mx); last = mx; break }
+        case 'radio': { var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 6; var ws = ctx.createWaveShaper(); ws.curve = distCurve(); ws.oversample = '4x'; var g = ctx.createGain(); g.gain.value = 3; var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 400; src.connect(bp); bp.connect(ws); ws.connect(g); g.connect(hp); last = hp; break }
+        case 'underwater': { var l1 = ctx.createBiquadFilter(); l1.type = 'lowpass'; l1.frequency.value = 350; l1.Q.value = 4; var g = ctx.createGain(); g.gain.value = 2; var l2 = ctx.createBiquadFilter(); l2.type = 'lowpass'; l2.frequency.value = 600; l2.Q.value = 1; src.connect(l1); l1.connect(g); g.connect(l2); last = l2; break }
+        case 'cave': { var cv = ctx.createConvolver(); cv.buffer = reverbImp(ctx); var dr = ctx.createGain(); dr.gain.value = 0.5; var wt = ctx.createGain(); wt.gain.value = 1.4; var mx = ctx.createGain(); mx.gain.value = 1; var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000; src.connect(dr); src.connect(cv); cv.connect(wt); dr.connect(mx); wt.connect(mx); mx.connect(lp); last = lp; break }
+      }
+      return { last: last, osc: osc };
+    }
+
+    // ── Recording ──
+    async function startRec() {
+      try
+      {
+        var stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+        S.mic = stream; var c = aCtx();
+        S.micSrc = c.createMediaStreamSource(stream);
+        S.micAn = c.createAnalyser(); S.micAn.fftSize = 2048;
+        S.micSrc.connect(S.micAn);
+        var chunks = [];
+        S.mr = new MediaRecorder(stream);
+        S.mr.ondataavailable = function (e) { if (e.data.size > 0) chunks.push(e.data) };
+        S.mr.onstop = async function () {
+          var blob = new Blob(chunks, { type: 'audio/webm' }); chunks.length = 0;
+          try
+          {
+            var buf = await c.decodeAudioData(await blob.arrayBuffer());
+            var r = { id: Date.now().toString(), blob: blob, buffer: buf, name: 'Recording ' + (S.list.length + 1), dur: S.recDur, ts: Date.now() };
+            S.list.unshift(r); S.selId = r.id; buildList(); updBtns(); toast('Recording saved', 'success');
+          } catch (e) { toast('Decode failed', 'error') }
+        };
+        S.mr.start(); S.rec = true; S.recStart = performance.now(); S.recDur = 0;
+        S.recRAF = requestAnimationFrame(tickTimer);
+        updBtns(); updViz(); toast('Recording...', 'recording');
+      } catch (e) { $permOvl.classList.add('active') }
+    }
+    function tickTimer() { if (!S.rec) return; S.recDur = (performance.now() - S.recStart) / 1000; $vTimer.textContent = fmt(S.recDur); S.recRAF = requestAnimationFrame(tickTimer) }
+    function stopRec() {
+      if (S.mr && S.mr.state !== 'inactive') S.mr.stop();
+      if (S.mic) { S.mic.getTracks().forEach(function (t) { t.stop() }); S.mic = null }
+      if (S.micSrc) { S.micSrc.disconnect(); S.micSrc = null }
+      S.micAn = null; S.rec = false; cancelAnimationFrame(S.recRAF); updBtns(); updViz();
+    }
+
+    // ── Playback ──
+    function playBuf(buffer, pid, offset) {
+      stopPlay(); var c = aCtx();
+      var src = c.createBufferSource(); src.buffer = buffer;
+      var an = c.createAnalyser(); an.fftSize = 2048; an.smoothingTimeConstant = 0.8; S.pAn = an;
+      var ch = buildChain(c, src, pid, S.speed);
+      ch.last.connect(an); an.connect(c.destination);
+      src.start(0, offset || 0);
+      S.pSrc = src; S.pOsc = ch.osc; S.play = true;
+      S.playCtxTime = c.currentTime; S.playOffset = offset || 0;
+      updBtns(); updViz(); updPlayIcon();
+      src.onended = function () { S.play = false; S.pSrc = null; S.pAn = null; if (S.pOsc) { try { S.pOsc.stop() } catch (e) { } S.pOsc = null } updBtns(); updViz(); updPlayIcon(); updSeek() };
+    }
+    function stopPlay() {
+      if (S.pSrc) { try { S.pSrc.stop() } catch (e) { } S.pSrc = null }
+      if (S.pOsc) { try { S.pOsc.stop() } catch (e) { } S.pOsc = null }
+      S.play = false; S.pAn = null; updBtns(); updViz(); updPlayIcon(); updSeek();
+    }
+    function seekTo(p) {
+      var r = selR(); if (!r) return;
+      var totalDur = r.buffer.duration / combRate(S.preset, S.speed);
+      playBuf(r.buffer, S.preset, p * totalDur);
+    }
+
+    // ── Bake Effect (OfflineAudioContext) ──
+    async function bakeEffect(id) {
+      var r = findR(id); if (!r || S.baking) return;
+      S.baking = true; toast('Baking effect...', 'info'); hideCtx();
+      try
+      {
+        var rate = combRate(S.preset, S.speed);
+        var outDur = r.buffer.duration / rate;
+        var tail = S.preset === 'echo' ? 1.5 : S.preset === 'cave' ? 3 : 0.1;
+        var sr = r.buffer.sampleRate, nc = r.buffer.numberOfChannels;
+        var offCtx = new OfflineAudioContext(nc, Math.ceil((outDur + tail) * sr), sr);
+        var src = offCtx.createBufferSource(); src.buffer = r.buffer;
+        var ch = buildChain(offCtx, src, S.preset, S.speed);
+        ch.last.connect(offCtx.destination); src.start(0);
+        var rendered = await offCtx.startRendering();
+        if (ch.osc) { try { ch.osc.stop() } catch (e) { } }
+        // Trim to target duration
+        var trimLen = Math.min(rendered.length, Math.ceil(outDur * sr));
+        var trimmed = offCtx.createBuffer(nc, trimLen, sr);
+        for (var c = 0; c < nc; c++) { var sd = rendered.getChannelData(c), dd = trimmed.getChannelData(c); for (var i = 0; i < trimLen; i++)dd[ i ] = sd[ i ] }
+        var pName = ''; for (var j = 0; j < PRESETS.length; j++)if (PRESETS[ j ].id === S.preset) { pName = PRESETS[ j ].name; break }
+        var nr = { id: Date.now().toString(), blob: null, buffer: trimmed, name: r.name + ' (' + pName + ')', dur: trimLen / sr, ts: Date.now() };
+        S.list.unshift(nr); S.selId = nr.id; buildList(); updBtns(); toast('Effect baked as new recording', 'success');
+      } catch (e) { toast('Bake failed', 'error') }
+      S.baking = false;
+    }
+
+    // ── Download / Share ──
+    function downloadWAV(id) {
+      var r = findR(id); if (!r) return;
+      var blob = encodeWAV(r.buffer), url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url; a.download = r.name.replace(/[^a-zA-Z0-9 _-]/g, '') + '.wav';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url) }, 5000);
+      toast('Downloaded', 'success'); hideCtx();
+    }
+    async function shareRec(id) {
+      var r = findR(id); if (!r) return; hideCtx();
+      var blob = encodeWAV(r.buffer);
+      var file = new File([ blob ], r.name.replace(/[^a-zA-Z0-9 _-]/g, '') + '.wav', { type: 'audio/wav' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [ file ] }))
+      {
+        try { await navigator.share({ files: [ file ], title: r.name }) } catch (e) { if (e.name !== 'AbortError') downloadWAV(id) }
+      } else downloadWAV(id);
+    }
+
+    // ── PWA ──
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredPrompt = e; $('installBtn').style.display = 'flex' });
+    $('installBtn').addEventListener('click', function () { if (!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt.userChoice.then(function (c) { if (c.outcome === 'accepted') toast('Installed', 'success'); deferredPrompt = null; $('installBtn').style.display = 'none' }) });
+
+    // ── Toast Pool ──
+    function toast(msg, type, undo) {
+      var t = _toastPool.length ? _toastPool.pop() : document.createElement('div');
+      t.className = 'toast toast-' + (type || 'info');
+      var sp = document.createElement('span'); sp.textContent = msg; t.appendChild(sp);
+      if (undo) { var b = document.createElement('button'); b.className = 'toast-undo'; b.textContent = 'UNDO'; b.addEventListener('click', function (e) { e.stopPropagation(); undoDelete(); if (t.parentNode) t.parentNode.removeChild(t); _toastPool.push(t) }); t.appendChild(b) }
+      $('toastBox').appendChild(t); void t.offsetWidth; t.classList.add('show');
+      setTimeout(function () { t.classList.remove('show'); setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); _toastPool.push(t) }, 300) }, 3000);
+    }
+
+    // ── UI Updates ──
+    function updBtns() {
+      var has = S.list.length > 0 && S.selId;
+      if (S.rec) { $recBtn.classList.add('recording'); $recI.textContent = 'stop'; $recBtn.disabled = false }
+      else { $recBtn.classList.remove('recording'); $recI.textContent = 'mic'; $recBtn.disabled = false }
+      if (S.play) { $playBtn.classList.add('playing'); $playI.textContent = 'stop'; $playBtn.disabled = false }
+      else { $playBtn.classList.remove('playing'); $playI.textContent = 'play_arrow'; $playBtn.disabled = !has || S.rec }
+    }
+    function updViz() {
+      if (S.rec) { $dot.classList.add('active'); $vLabel.textContent = 'REC'; $vLabel.className = 'viz-label active rc'; $vTimer.classList.add('active'); $seekBar.classList.remove('active'); $peakM.classList.add('active') }
+      else if (S.play) { $dot.classList.remove('active'); $vLabel.textContent = 'PLAYING'; $vLabel.className = 'viz-label active pc'; $vTimer.classList.remove('active'); $seekBar.classList.add('active'); $peakM.classList.add('active') }
+      else { $dot.classList.remove('active'); $vLabel.className = 'viz-label'; $vTimer.classList.remove('active'); $seekBar.classList.remove('active'); $peakM.classList.remove('active') }
+    }
+    function updSeek() {
+      if (!S.play || !S.selId) { $seekFill.style.width = '0%'; $seekHandle.style.left = '0%'; return }
+      var r = selR(); if (!r) return;
+      var totalDur = r.buffer.duration / combRate(S.preset, S.speed);
+      var elapsed = S.playOffset + (audioCtx.currentTime - S.playCtxTime);
+      var p = Math.min(1, elapsed / totalDur);
+      $seekFill.style.width = (p * 100) + '%'; $seekHandle.style.left = (p * 100) + '%';
+    }
+    function updPeak(rms) {
+      var pct = Math.min(100, rms * 350);
+      $peakF.style.width = pct + '%';
+      if (rms > S.peakHold) S.peakHold = rms; else S.peakHold *= 0.993;
+      $peakH.style.left = Math.min(100, S.peakHold * 350) + '%';
+    }
+
+    // ── Presets (build once) ──
+    var $chips = [];
+    (function buildPresets() {
+      for (var i = 0; i < PRESETS.length; i++)
+      {
+        var el = document.createElement('div'); el.className = 'preset-chip'; el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0'); el.dataset.pid = PRESETS[ i ].id;
+        el.innerHTML = '<span class="material-icons-round">' + PRESETS[ i ].icon + '</span><span class="preset-chip-name">' + PRESETS[ i ].name + '</span>';
+        $pGrid.appendChild(el); $chips.push(el);
+      }
+      $pGrid.addEventListener('click', function (e) { var ch = e.target.closest('.preset-chip'); if (ch) selPreset(ch.dataset.pid) });
+      $pGrid.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { var ch = e.target.closest('.preset-chip'); if (ch) { e.preventDefault(); selPreset(ch.dataset.pid) } } });
+      updPSel();
+    })();
+    function updPSel() {
+      for (var i = 0; i < $chips.length; i++)$chips[ i ].classList.toggle('selected', PRESETS[ i ].id === S.preset);
+      for (var j = 0; j < PRESETS.length; j++)if (PRESETS[ j ].id === S.preset) { $pDesc.textContent = PRESETS[ j ].desc; break }
+    }
+    function selPreset(id) {
+      if (S.preset === id) return; S.preset = id; updPSel(); updBadges();
+      if (S.play) { var r = selR(); if (r) { stopPlay(); setTimeout(function () { playBuf(r.buffer, id) }, 60) } }
+      for (var i = 0; i < PRESETS.length; i++)if (PRESETS[ i ].id === id) { toast('Preset: ' + PRESETS[ i ].name); break }
+    }
+
+    // ── Speed (build once) ──
+    var $spChips = [];
+    (function buildSpeeds() {
+      for (var i = 0; i < SPEEDS.length; i++)
+      {
+        var el = document.createElement('button'); el.className = 'speed-chip'; el.dataset.spd = SPEEDS[ i ];
+        el.textContent = SPEEDS[ i ] + 'x'; $speedRow.appendChild(el); $spChips.push(el);
+      }
+      $speedRow.addEventListener('click', function (e) { var ch = e.target.closest('.speed-chip'); if (ch) selSpeed(parseFloat(ch.dataset.spd)) });
+      updSSel();
+    })();
+    function updSSel() { for (var i = 0; i < $spChips.length; i++)$spChips[ i ].classList.toggle('sel', SPEEDS[ i ] === S.speed) }
+    function selSpeed(v) {
+      if (S.speed === v) return; S.speed = v; updSSel();
+      if (S.play) { var r = selR(); if (r) { var totalDur = r.buffer.duration / combRate(S.preset, S.speed); var elapsed = S.playOffset + (audioCtx.currentTime - S.playCtxTime); var p = Math.min(1, elapsed / totalDur); playBuf(r.buffer, S.preset, p * totalDur) } }
+      toast('Speed: ' + v + 'x');
+    }
+
+    // ── Recordings List ──
+    function buildList() {
+      // Sort
+      S.list.sort(SORTS[ S.sortIdx ].fn);
+      $rCount.textContent = S.list.length ? S.list.length + ' total' : '';
+      $sortBtn.style.display = S.list.length >= 2 ? 'flex' : 'none';
+      if (!S.list.length) { $rList.innerHTML = '<div class="empty-state"><span class="material-icons-round">mic_none</span>No recordings yet.<br>Tap the mic to start.</div>'; return }
+      var frag = document.createDocumentFragment();
+      for (var i = 0; i < S.list.length; i++)
+      {
+        var r = S.list[ i ], el = document.createElement('div');
+        el.className = 'recording-item'; el.dataset.rid = r.id;
+        el.innerHTML = '<button class="rec-item-play" data-act="play" aria-label="Play"><span class="material-icons-round" style="font-size:18px">play_arrow</span></button>'
+          + '<div class="rec-item-info"><div class="rec-item-name">' + r.name + '</div><div class="rec-item-meta"><span class="rec-dur">' + fmt(r.dur) + '</span><span class="rec-item-preset-badge"></span></div></div>'
+          + '<button class="rec-item-more" data-act="more" aria-label="More"><span class="material-icons-round" style="font-size:20px">more_vert</span></button>';
+        frag.appendChild(el);
+      }
+      $rList.innerHTML = ''; $rList.appendChild(frag);
+      // Double-click to rename
+      var names = $rList.querySelectorAll('.rec-item-name');
+      for (var j = 0; j < names.length; j++)(function (el, rid) { el.addEventListener('dblclick', function () { startRename(rid) }) })(names[ j ], S.list[ j ].id);
+      updSelClass(); updPlayIcon(); updBadges();
+    }
+    function updSelClass() { var items = $rList.children; for (var i = 0; i < items.length; i++)items[ i ].classList.toggle('selected', items[ i ].dataset.rid === S.selId) }
+    function updPlayIcon() { var items = $rList.children; for (var i = 0; i < items.length; i++) { var isThis = S.play && items[ i ].dataset.rid === S.selId; items[ i ].querySelector('.rec-item-play .material-icons-round').textContent = isThis ? 'stop' : 'play_arrow' } }
+    function updBadges() { var n = ''; for (var i = 0; i < PRESETS.length; i++)if (PRESETS[ i ].id === S.preset) { n = PRESETS[ i ].name; break } var badges = $rList.querySelectorAll('.rec-item-preset-badge'); for (var j = 0; j < badges.length; j++)badges[ j ].textContent = n }
+
+    // Event delegation for list
+    $rList.addEventListener('click', function (e) {
+      var pb = e.target.closest('[data-act="play"]');
+      if (pb)
+      {
+        e.stopPropagation(); var id = pb.closest('.recording-item').dataset.rid;
+        if (S.play && S.selId === id) stopPlay();
+        else { S.selId = id; updSelClass(); var r = findR(id); if (r) playBuf(r.buffer, S.preset) } return
+      }
+      var mb = e.target.closest('[data-act="more"]');
+      if (mb) { e.stopPropagation(); showCtx(mb, S.list[ Array.prototype.indexOf.call($rList.children, mb.closest('.recording-item')) ].id); return }
+      var item = e.target.closest('.recording-item');
+      if (item) { S.selId = item.dataset.rid; updSelClass(); updBtns() }
+    });
+
+    // ── Context Menu ──
+    function showCtx(btn, id) {
+      S.ctxId = id; var rect = btn.getBoundingClientRect();
+      // Show first to measure
+      $ctxMenu.style.visibility = 'hidden'; $ctxMenu.classList.add('active');
+      var mr = $ctxMenu.getBoundingClientRect();
+      var top = rect.bottom + 4, left = rect.right - mr.width;
+      if (top + mr.height > window.innerHeight - 20) top = rect.top - mr.height - 4;
+      if (left < 8) left = 8; if (left + mr.width > window.innerWidth - 8) left = window.innerWidth - mr.width - 8;
+      $ctxMenu.style.top = top + 'px'; $ctxMenu.style.left = left + 'px'; $ctxMenu.style.visibility = '';
+    }
+    function hideCtx() { $ctxMenu.classList.remove('active'); S.ctxId = null }
+    $ctxMenu.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-ca]'); if (!btn) return;
+      var act = btn.dataset.ca, id = S.ctxId; if (!id) return;
+      if (act === 'download') downloadWAV(id);
+      else if (act === 'share') shareRec(id);
+      else if (act === 'bake') bakeEffect(id);
+      else if (act === 'rename') startRename(id);
+      else if (act === 'delete') deleteRec(id);
+    });
+    document.addEventListener('pointerdown', function (e) { if (!e.target.closest('.ctx-menu') && !e.target.closest('[data-act="more"]')) hideCtx() });
+
+    // ── Rename ──
+    function startRename(id) {
+      hideCtx(); var item = $rList.querySelector('[data-rid="' + id + '"]'); if (!item) return;
+      var nameEl = item.querySelector('.rec-item-name'), r = findR(id); if (!nameEl || !r) return;
+      var input = document.createElement('input'); input.className = 'rec-item-rename'; input.type = 'text'; input.value = r.name;
+      nameEl.replaceWith(input); input.focus(); input.select();
+      var saved = false;
+      function save() {
+        if (saved) return; saved = true;
+        var val = input.value.trim() || r.name; r.name = val;
+        var sp = document.createElement('div'); sp.className = 'rec-item-name'; sp.textContent = val;
+        input.replaceWith(sp); sp.addEventListener('dblclick', function () { startRename(id) });
+      }
+      input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); save() } if (e.key === 'Escape') { input.value = r.name; save() } });
+      input.addEventListener('blur', save);
+    }
+
+    // ── Delete + Undo ──
+    function deleteRec(id) {
+      if (S.play && S.selId === id) stopPlay();
+      var idx = -1; for (var i = 0; i < S.list.length; i++)if (S.list[ i ].id === id) { idx = i; break }
+      if (idx === -1) return;
+      var removed = S.list.splice(idx, 1)[ 0 ];
+      _undoStack.push({ rec: removed, idx: idx });
+      if (S.selId === id) S.selId = S.list.length ? S.list[ 0 ].id : null;
+      buildList(); updBtns(); hideCtx(); toast('Recording deleted', 'info', true);
+    }
+    function undoDelete() {
+      if (!_undoStack.length) return;
+      var u = _undoStack.pop(); S.list.splice(Math.min(u.idx, S.list.length), 0, u.rec);
+      if (!S.selId) S.selId = u.rec.id; buildList(); updBtns(); toast('Restored', 'success');
+    }
+
+    // ── Sort ──
+    $sortBtn.addEventListener('click', function () {
+      S.sortIdx = (S.sortIdx + 1) % SORTS.length;
+      toast('Sort: ' + SORTS[ S.sortIdx ].label);
+      buildList();
+    });
+
+    // ── Help Modal ──
+    $('helpBtn').addEventListener('click', function () { $helpOvl.classList.add('active') });
+    $('helpClose').addEventListener('click', function () { $helpOvl.classList.remove('active') });
+    $helpOvl.addEventListener('click', function (e) { if (e.target === $helpOvl) $helpOvl.classList.remove('active') });
+
+    // ── Permission ──
+    $('permRetry').addEventListener('click', function () { $permOvl.classList.remove('active'); startRec() });
+
+    // ── Seek Bar Interaction ──
+    var seekDrag = false;
+    $seekBar.addEventListener('pointerdown', function (e) { if (!S.play) return; e.preventDefault(); seekDrag = true; $seekBar.setPointerCapture(e.pointerId); doSeek(e) });
+    $seekBar.addEventListener('pointermove', function (e) { if (seekDrag) doSeek(e) });
+    $seekBar.addEventListener('pointerup', function (e) { if (seekDrag) { seekDrag = false; doSeek(e) } });
+    $seekBar.addEventListener('pointercancel', function () { seekDrag = false });
+    function doSeek(e) { var rect = $seekBar.getBoundingClientRect(); var p = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)); seekTo(p) }
+
+    // ── Visualization ──
+    function drawWave(data, w, h, isRec) {
+      var grad = isRec ? gradRec : gradPlay, fill = isRec ? fillRec : fillPlay, halfH = h * 0.5;
+      var step = Math.max(1, ((data.length) / (w * 1.2)) | 0), n = 0;
+      for (var i = 0; i < data.length; i += step) { ensurePts(n + 1); _pts[ n ].x = (i / data.length) * w; _pts[ n ].y = (data[ i ] * halfH) / 128; n++ }
+      if (n < 2) return;
+      ctx2d.save(); ctx2d.shadowBlur = 20; ctx2d.shadowColor = isRec ? '#FF1744' : '#FF6D00';
+      ctx2d.strokeStyle = grad; ctx2d.lineWidth = 2.5; ctx2d.lineCap = 'round'; ctx2d.lineJoin = 'round';
+      ctx2d.beginPath(); ctx2d.moveTo(_pts[ 0 ].x, _pts[ 0 ].y);
+      for (var j = 1; j < n; j++)ctx2d.quadraticCurveTo(_pts[ j - 1 ].x, _pts[ j - 1 ].y, (_pts[ j ].x + _pts[ j - 1 ].x) * 0.5, (_pts[ j ].y + _pts[ j - 1 ].y) * 0.5);
+      ctx2d.lineTo(_pts[ n - 1 ].x, _pts[ n - 1 ].y); ctx2d.stroke(); ctx2d.restore();
+      ctx2d.fillStyle = fill; ctx2d.beginPath(); ctx2d.moveTo(_pts[ 0 ].x, _pts[ 0 ].y);
+      for (var k = 1; k < n; k++)ctx2d.quadraticCurveTo(_pts[ k - 1 ].x, _pts[ k - 1 ].y, (_pts[ k ].x + _pts[ k - 1 ].x) * 0.5, (_pts[ k ].y + _pts[ k - 1 ].y) * 0.5);
+      ctx2d.lineTo(_pts[ n - 1 ].x, h); ctx2d.lineTo(_pts[ 0 ].x, h); ctx2d.closePath(); ctx2d.fill();
+    }
+    function drawIdle(w, h, t) {
+      var halfH = h * 0.5;
+      for (var L = 0; L < 2; L++)
+      {
+        var a = L === 0 ? 0.1 : 0.05, amp = L === 0 ? 14 : 8, freq = L === 0 ? 0.012 : 0.008, spd = L === 0 ? 0.0008 : 0.0005;
+        ctx2d.strokeStyle = 'rgba(255,109,0,' + a + ')'; ctx2d.lineWidth = 2; ctx2d.lineCap = 'round'; ctx2d.beginPath();
+        for (var x = 0; x <= w; x += 4) { var y = halfH + Math.sin(x * freq + t * spd) * amp + Math.sin(x * freq * 1.7 + t * spd * 0.7) * (amp * 0.5); if (x === 0) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y) }
+        ctx2d.stroke();
+      }
+    }
+    function calcRMS(data) { var sum = 0, l = data.length; for (var i = 0; i < l; i++) { var v = (data[ i ] - 128) / 128; sum += v * v } return Math.sqrt(sum / l) }
+
+    function animate(time) {
+      requestAnimationFrame(animate);
+      if (S.hidden || cW === 0 || cH === 0) return;
+      if (centerDirty) rebuildCL();
+      ctx2d.fillStyle = '#111111'; ctx2d.fillRect(0, 0, cW, cH);
+      if (centerLineOff) ctx2d.drawImage(centerLineOff, 0, 0);
+
+      var activeAn = null, isRec = false;
+      if (S.rec && S.micAn) { activeAn = S.micAn; isRec = true }
+      else if (S.play && S.pAn) { activeAn = S.pAn; isRec = false }
+
+      if (activeAn)
+      {
+        var data = getWB(activeAn.frequencyBinCount);
+        activeAn.getByteTimeDomainData(data);
+        drawWave(data, cW, cH, isRec);
+        updPeak(calcRMS(data));
+        if (S.play) updSeek();
+      } else
+      {
+        drawIdle(cW, cH, time);
+        S.peakHold *= 0.95; updPeak(0);
+      }
+    }
+
+    // ── Visibility ──
+    document.addEventListener('visibilitychange', function () { S.hidden = document.hidden; if (S.hidden && S.rec) stopRec() });
+
+    // ── Keyboard ──
+    document.addEventListener('keydown', function (e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key >= '1' && e.key <= '8') { var i = +e.key - 1; if (PRESETS[ i ]) selPreset(PRESETS[ i ].id); return }
+      if (e.code === 'Space') { e.preventDefault(); if (S.rec) stopRec(); else if (S.play) stopPlay(); else if (S.selId) { var r = selR(); if (r) playBuf(r.buffer, S.preset) } else startRec(); return }
+      if (e.code === 'KeyR') { e.preventDefault(); if (S.play) stopPlay(); S.rec ? stopRec() : startRec(); return }
+      if (e.code === 'KeyP') { e.preventDefault(); if (S.rec) return; S.play ? stopPlay() : (function () { var r = selR(); if (r) playBuf(r.buffer, S.preset) })(); return }
+      if (e.code === 'Delete' || e.code === 'Backspace') { if (S.selId && !S.rec) { e.preventDefault(); deleteRec(S.selId) } }
+    });
+
+    // ── Main Buttons ──
+    $recBtn.addEventListener('click', function () { if (S.play) stopPlay(); S.rec ? stopRec() : startRec() });
+    $playBtn.addEventListener('click', function () { if (S.rec) return; S.play ? stopPlay() : (function () { var r = selR(); if (r) playBuf(r.buffer, S.preset) })() });
+
+    // ── AudioContext resume on first interaction (mobile) ──
+    document.addEventListener('touchstart', function () { aCtx() }, { once: true, passive: true });
+    document.addEventListener('click', function () { aCtx() }, { once: true, passive: true });
+
+    // ── Init ──
+    updBtns(); updViz(); requestAnimationFrame(animate);
+  </script>
+</body>
+
+</html>
